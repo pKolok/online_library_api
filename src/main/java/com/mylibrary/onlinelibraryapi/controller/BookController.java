@@ -1,9 +1,11 @@
 package com.mylibrary.onlinelibraryapi.controller;
 
 import com.mylibrary.onlinelibraryapi.exception.CustomException;
+import com.mylibrary.onlinelibraryapi.exception.NotFoundException;
 import com.mylibrary.onlinelibraryapi.model.Book;
 import com.mylibrary.onlinelibraryapi.service.BookService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -31,7 +33,7 @@ public class BookController {
         if (bookService.doesBookExistByIsbn(book.getIsbn())) {
             throw new CustomException(Map.of("isbn", "A book with this ISBN already exists"));
         }
-        return ResponseEntity.ok(bookService.createBook(book));
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookService.createBook(book));
     }
 
     // Retrieve All Books
@@ -45,7 +47,7 @@ public class BookController {
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {
         Optional<Book> currentBookOptional = bookService.getBookById(id);
         if (currentBookOptional.isEmpty()) {
-            throw new CustomException(Map.of("error", String.format("Book with id %d not found", id)));
+            throw new NotFoundException(Map.of("error", String.format("Book with id %d not found", id)));
         }
 
         return bookService.getBookById(id)
@@ -58,12 +60,13 @@ public class BookController {
     public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
         Optional<Book> currentBookOptional = bookService.getBookById(id);
         if (currentBookOptional.isEmpty()) {
-            throw new CustomException(Map.of("error", String.format("Book with id %d not found", id)));
+            throw new NotFoundException(Map.of("error", String.format("Book with id %d not found", id)));
         }
 
         Book currentBook = currentBookOptional.get();
 
-        if (!currentBook.getIsbn().equals(updatedBook.getIsbn()) && bookService.doesBookExistByIsbn(updatedBook.getIsbn())) {
+        if (!currentBook.getIsbn().equals(updatedBook.getIsbn()) &&
+                bookService.doesBookExistByIsbn(updatedBook.getIsbn())) {
             throw new CustomException(Map.of("isbn", "A book with this ISBN already exists"));
         }
 
@@ -77,7 +80,7 @@ public class BookController {
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
         Optional<Book> currentBookOptional = bookService.getBookById(id);
         if (currentBookOptional.isEmpty()) {
-            throw new CustomException(Map.of("error", String.format("Book with id %d not found", id)));
+            throw new NotFoundException(Map.of("error", String.format("Book with id %d not found", id)));
         }
 
         bookService.deleteBook(id);
@@ -91,6 +94,7 @@ public class BookController {
         return ResponseEntity.ok(bookService.searchBooks(title, author));
     }
 
+    // TODO: not working
     @GetMapping("/{id}/ai-insights")
     public ResponseEntity<String> getAiInsights(@PathVariable Long id) {
         Optional<Book> bookOptional = bookService.getBookById(id);
@@ -112,4 +116,5 @@ public class BookController {
 
         return ResponseEntity.ok(aiResponse);
     }
+
 }

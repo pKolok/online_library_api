@@ -23,6 +23,12 @@ public class GlobalExceptionHandler {
         return errors;
     }
 
+    // Handles non existing validation errors (e.g., id does not exist)
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleFieldValidationExceptions(NotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getErrors());
+    }
+
     // Handles custom validation errors (e.g., duplicate ISBN)
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<Map<String, String>> handleFieldValidationExceptions(CustomException ex) {
